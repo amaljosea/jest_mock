@@ -1,6 +1,7 @@
-module.exports = function(babel) {
+export default function(babel) {
   const { types: t } = babel;
 
+  // check if the ExpressionStatement is a jestDemo.mock
   const findMockConfig = path => {
     try {
       if (path.node.expression.callee.object.name === "jestDemo") {
@@ -19,10 +20,12 @@ module.exports = function(babel) {
     }
   };
 
+  // create a variableDeclaration to replace the actuall import
   const createConstMock = (name, value) =>
     t.variableDeclaration("const", [t.variableDeclarator(t.identifier(name), t.numericLiteral(value))]);
 
-  const findMockVariableName = (path, mockConfig) => {
+  // find the import variable name if current path matches with the path in mockConfig
+  const findImportVariableName = (path, mockConfig) => {
     try {
       if (path.node.source.value === mockConfig.path) {
         return path.node.specifiers[0].local.name;
@@ -37,7 +40,7 @@ module.exports = function(babel) {
 
   const ImportVisitor = {
     ImportDeclaration(path) {
-      const mockVariableName = findMockVariableName(path, this.mockConfig);
+      const mockVariableName = findImportVariableName(path, this.mockConfig);
       if (mockVariableName) {
         let mockedValue = createConstMock(mockVariableName, this.mockConfig.value);
         path.replaceWith(mockedValue);
